@@ -31,6 +31,9 @@ struct ArrangementDemoView: View {
     @State private var destination = Destination.samples[0]
 
     var body: some View {
+        // iPhone Duo: Navigation (NavigationStack, toolbar) ArrangementView'ün
+        // DIŞINDA kalmalı. ArrangementView içine NavigationSplitView/TabView
+        // koymuyoruz; ArrangementView'ü de ScrollView/Grid içine koymuyoruz.
         NavigationStack {
             arrangement
                 .navigationTitle("Arrangement")
@@ -50,16 +53,27 @@ struct ArrangementDemoView: View {
 
     @ViewBuilder
     private var arrangement: some View {
+        // iPhone Duo: ZStack/HStack yerine ArrangementView kullanıyoruz.
+        // Neden? Düz ekranda kartı görselin üstüne bindirmek güzel; ama cihaz
+        // yarı katlandığında kart katlanma çizgisinin üstüne denk gelir ve
+        // ikiye bölünür. ArrangementView bunu bizim yerimize çözer: katlıyken
+        // iki görünümü çizginin iki yanına taşır. Bunun için hiç kod yazmıyoruz.
         let view = ArrangementView {
-            // Primary: the information the user is working with.
+            // iPhone Duo: Primary = kullanıcının etkileşimde olduğu asıl içerik.
+            // Split stilinde cihaz kapalı + yataydayken sadece primary gösterilir,
+            // bu yüzden en önemli içeriği buraya koyuyoruz.
             DestinationInfo(destination: $destination)
         } secondary: {
-            // Secondary: the large visual context (like a map in Maps).
+            // iPhone Duo: Secondary = arka plandaki büyük görsel bağlam
+            // (Haritalar uygulamasındaki harita gibi).
             DestinationArtwork(destination: destination, symbolScale: 0.3)
                 .ignoresSafeArea()
                 .animation(.smooth, value: destination)
         }
 
+        // iPhone Duo: İki stil iki farklı tasarım fikrini temsil eder:
+        // .overlay → ZStack gibi (katlanınca yan yana geçer)
+        // .split   → HStack/VStack gibi (her zaman ayrı durur)
         switch style {
         case .overlay:
             view.arrangementViewStyle(.overlay)

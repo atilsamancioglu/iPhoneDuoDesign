@@ -31,8 +31,16 @@ struct HingeLabView: View {
     var body: some View {
         NavigationStack {
             GeometryReader { proxy in
+                // iPhone Duo: Rezerve bölgeleri GeometryProxy üzerinden okuyoruz.
+                // .division  → katlanma çizgisi (sadece yarı katlıyken aktif)
+                // .occlusion → ekranı örten şeyler (kamera, Dynamic Island)
+                // .includeInactive ile henüz aktif olmayan bölgeleri de alıyoruz;
+                // ileride çıkacak bir bölgeye önceden yer ayırıp layout'un
+                // zıplamasını önlemek istediğimizde işe yarar. Burada ise
+                // ekranda aktif/pasif durumunu göstermek için kullanıyoruz.
                 let divisions = proxy.reservedRegions(kind: .division, options: .includeInactive)
                 let occlusions = proxy.reservedRegions(kind: .occlusion, options: .includeInactive)
+                // iPhone Duo: Layout kararlarını sadece AKTİF çizgiye göre veriyoruz.
                 let activeDivision = divisions.first { $0.isActive }
 
                 ZStack {
@@ -42,14 +50,18 @@ struct HingeLabView: View {
                             .animation(.smooth, value: activeDivision?.frame)
                     }
 
+                    // iPhone Duo: Sadece eğitim amaçlı; rezerve bölgeleri ekranda
+                    // çizerek nereden uzak durmamız gerektiğini gösteriyoruz.
                     if showRegions {
                         RegionOverlay(regions: divisions, tint: .pink)
                         RegionOverlay(regions: occlusions, tint: .orange)
                     }
 
-                    // A custom floating button. It would normally sit in the
-                    // center – right on top of the fold – so we move it to
-                    // the trailing side whenever the fold is active.
+                    // iPhone Duo: Kendi yazdığımız yüzen buton. Sistem bileşenleri
+                    // (sheet, alert, menu) çizgiden kendiliğinden kaçar ama özel
+                    // overlay'ler kaçmaz! Normalde ortada duran buton katlanma
+                    // çizgisinin tam üstüne denk gelir; bu yüzden çizgi aktifken
+                    // butonu sağ tarafa taşıyoruz. Etkileşimli öğeler çizgiden uzak durmalı.
                     FloatingActionButton()
                         .position(
                             x: floatingButtonX(in: proxy.size, avoiding: activeDivision),
@@ -67,6 +79,11 @@ struct HingeLabView: View {
                 }
             }
         }
+        // iPhone Duo: Menteşenin durumunu (kapalı/yarı açık/tam açık) ve açısını
+        // dinliyoruz. ÇOĞU UYGULAMANIN BUNA İHTİYACI YOKTUR: layout için size
+        // class ve rezerve bölgeler yeterli. Bu API kamera veya "laptop modu"
+        // gibi özel deneyimler içindir. hinge nil ise view menteşe bilgisi
+        // sağlayan bir hiyerarşide değildir (ör. menteşesiz bir iPhone).
         .onHingeChange { _, newContext in
             hinge = newContext.hinge
         }
@@ -75,9 +92,13 @@ struct HingeLabView: View {
     /// Approximate half width of the floating button, used to test overlap with the fold.
     private let buttonHalfWidth: CGFloat = 80
 
+    // iPhone Duo: Butonun yatay konumunu çizgiye göre hesaplıyoruz.
     private func floatingButtonX(in size: CGSize, avoiding division: ReservedRegion?) -> CGFloat {
         let center = size.width / 2
-        // Does the button (not just its center point) overlap the fold?
+        // iPhone Duo: Sadece merkez noktası değil, butonun tüm genişliği
+        // kontrol ediliyor. İlk denemede sadece merkeze baktık; dikey tab bar
+        // view'ü daralttığı için merkez çizginin hemen solunda kaldı ve buton
+        // yine çizginin üstüne denk geldi.
         guard let division,
               division.frame.minX < center + buttonHalfWidth,
               division.frame.maxX > center - buttonHalfWidth else {
@@ -93,11 +114,16 @@ struct HingeLabView: View {
     /// one card on each side of it – a custom layout that respects the division.
     @ViewBuilder
     private func cards(divisions: [ReservedRegion], occlusions: [ReservedRegion], avoiding division: ReservedRegion?) -> some View {
+        // iPhone Duo: Çizgi aktifken kartları alt alta değil, çizginin iki
+        // yanına koyuyoruz; böylece hiçbir kartın metni ikiye bölünmüyor.
+        // Çizgi yokken (kapalı veya tam açık) normal dikey düzen kullanılıyor.
         if let division, division.frame.width > 0 {
             HStack(alignment: .top, spacing: 0) {
+                // iPhone Duo: Sol kart çizginin başladığı yere (minX) kadar.
                 hingeCard
                     .padding()
                     .frame(width: max(division.frame.minX, 0))
+                // iPhone Duo: Çizginin olduğu alan boş bırakılıyor.
                 Color.clear
                     .frame(width: division.frame.width)
                 regionsCard(divisions: divisions, occlusions: occlusions)
@@ -155,6 +181,8 @@ struct HingeLabView: View {
         case .closed: "Closed"
         case .partiallyOpen: "Partially Open"
         case .fullyOpen: "Fully Open"
+        // iPhone Duo: Status bir enum değil struct; ileride yeni durumlar
+        // eklenebileceği için default şart.
         default: "Unknown"
         }
     }

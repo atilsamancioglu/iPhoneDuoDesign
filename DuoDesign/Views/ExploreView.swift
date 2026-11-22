@@ -28,6 +28,10 @@ struct ExploreView: View {
     }
 
     var body: some View {
+        // iPhone Duo: NavigationSplitView'ü bilerek seçtik. Dış ekranda (compact
+        // width) tek sütuna iner, iç ekranda (regular width) liste + detay olur.
+        // Cihaz yarı katlıyken sütunları katlanma çizgisine göre kendisi ayarlar.
+        // Yani pozisyon (pose) için tek satır özel kod yazmamıza gerek yok.
         NavigationSplitView {
             List(Destination.samples, selection: $selection) { destination in
                 DestinationRow(destination: destination)
@@ -97,12 +101,22 @@ struct DestinationDetailView: View {
                     }
                 }
             }
-            // Use layout margins instead of fixed widths.
+            // iPhone Duo: Sabit genişlik/padding yerine sistemin kenar boşluklarını
+            // kullanıyoruz. Böylece aynı içerik dış ekranda, iç ekranda ve split
+            // view'ün dar sütununda doğru boşlukla görünür.
             .scenePadding()
         }
         .navigationTitle(destination.name)
         .toolbar {
-            // Most important actions: keep them visible as long as possible.
+            // iPhone Duo: Bu toolbar dış ekranda ve yatay iç ekranda yana geçer
+            // ve dikey dizilir. Dikey alan kısıtlı olduğu için bazı butonlar
+            // sığmayabilir; hangisinin görünür kalacağını biz belirliyoruz.
+            //
+            // Ayrıca her butonda Label (başlık + ikon) kullanıyoruz: dikey barda
+            // sadece ikon görünür, taşma menüsünde ise başlık gerekir.
+            // Butonlar arasına sabit boşluk (Spacer vb.) koymuyoruz.
+
+            // iPhone Duo: Yüksek öncelik → yer daraldığında en son bunlar gizlenir.
             ToolbarItemGroup {
                 Button {
                     isFavorite.toggle()
@@ -115,7 +129,8 @@ struct DestinationDetailView: View {
             }
             .visibilityPriority(.high)
 
-            // Less important actions: these can move into overflow first.
+            // iPhone Duo: Düşük öncelik → yer yetmezse ilk önce bunlar "…"
+            // menüsüne taşınır. Simülatörde dış ekranda "Book" bu yüzden menüye gider.
             ToolbarItemGroup {
                 Button {} label: {
                     Label("Directions", systemImage: "map")
@@ -126,8 +141,9 @@ struct DestinationDetailView: View {
             }
             .visibilityPriority(.low)
 
-            // The system overflow menu (the "…" button). Don't create your
-            // own ellipsis menu – this one works on the vertical bar too.
+            // iPhone Duo: Sistemin kendi taşma menüsü ("…" butonu). Kendi "…"
+            // Menu'müzü yazmıyoruz, çünkü sistem taşan butonları da buraya ekler
+            // ve dikey barda doğru yere yerleştirir. "…" ikonu sadece buna ayrılmıştır.
             ToolbarOverflowMenu {
                 Button("Report a Problem", systemImage: "exclamationmark.bubble") {}
                 Button("Download for Offline", systemImage: "arrow.down.circle") {}

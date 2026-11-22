@@ -15,6 +15,9 @@ struct DestinationArtwork: View {
     var symbolScale: CGFloat = 0.35
 
     var body: some View {
+        // iPhone Duo: İkon boyutu sabit değil, view'ün o anki boyutuna oranla
+        // hesaplanıyor. Aynı view dış ekranda, iç ekranda ve çizginin iki
+        // yanında farklı boyutlarda kullanıldığı için böyle yapıyoruz.
         GeometryReader { proxy in
             ZStack {
                 destination.gradient
@@ -35,6 +38,9 @@ struct DestinationRow: View {
             DestinationArtwork(destination: destination, symbolScale: 0.5)
                 .frame(width: 48, height: 48)
                 .clipShape(.rect(cornerRadius: 12))
+            // iPhone Duo: Split view'ün yan sütunu iç ekranda oldukça dar.
+            // Puan rozeti sağda dururken "Cappadocia" ikiye bölünüyordu; bu
+            // yüzden puanı alt satıra aldık ve satırları tek satıra sınırladık.
             VStack(alignment: .leading, spacing: 2) {
                 Text(destination.name)
                     .font(.headline)
@@ -93,6 +99,8 @@ struct InfoPanel<Content: View>: View {
             content
         }
         .padding(20)
+        // iPhone Duo: Sabit genişlik yok; panel içinde bulunduğu alana yayılır
+        // (tam ekran, çizginin bir yanı ya da ArrangementView'ün bir tarafı).
         .frame(maxWidth: .infinity, alignment: .leading)
         .glassEffect(.regular, in: .rect(cornerRadius: 28))
     }

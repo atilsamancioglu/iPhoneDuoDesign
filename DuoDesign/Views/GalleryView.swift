@@ -24,6 +24,10 @@ import SwiftUI
 struct GalleryView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
+    // iPhone Duo: Pozisyona (kapalı/yarı açık/açık) göre değil, size class'a
+    // göre karar veriyoruz. Compact = dış ekran, regular = iç ekran.
+    // Sütun sayısı hep ÇİFT: katlanma çizgisi ekranın ortasında olduğu için
+    // çift sütun ortadan temiz bölünür, tek sütunlu bir kart ikiye ayrılmaz.
     /// Always even: 2 columns on the outer display, 4 on the inner display.
     private var columnCount: Int {
         horizontalSizeClass == .regular ? 4 : 2
@@ -32,10 +36,18 @@ struct GalleryView: View {
     var body: some View {
         NavigationStack {
             GeometryReader { proxy in
-                // Only active regions are returned by default.
+                // iPhone Duo: Katlanma çizgisini (.division) soruyoruz.
+                // Varsayılan olarak sadece AKTİF bölgeler döner: cihaz tam açıkken
+                // liste boştur, yarı katlıyken çizginin frame'ini verir.
+                // Frame bu view'ün kendi koordinatlarındadır.
                 let fold = proxy.reservedRegions(kind: .division).first
 
                 ScrollView {
+                    // iPhone Duo: Sadece çift sütun yetmedi! Yandaki dikey tab bar
+                    // genişlik kapladığı için grid'in ortası ekranın ortasıyla
+                    // çakışmıyor. Bu yüzden katlıyken çizginin gerçek konumunu
+                    // kullanıp sütunların yarısını bir tarafa, yarısını diğer
+                    // tarafa koyuyoruz. Katlı değilken normal grid gösteriliyor.
                     if let fold, columnCount > 2 {
                         foldedGrid(around: fold)
                     } else {
@@ -64,9 +76,13 @@ struct GalleryView: View {
         let trailing = indexed.filter { $0.offset % columnCount >= half }.map(\.element)
 
         return HStack(alignment: .top, spacing: 0) {
+            // iPhone Duo: Sol taraf tam olarak çizginin başladığı yere (minX)
+            // kadar uzanır.
             grid(leading, columns: half)
                 .padding()
                 .frame(width: max(fold.frame.minX, 0))
+            // iPhone Duo: Çizginin kendisi boş bırakılır. Frame, sistemin
+            // önerdiği kenar boşluklarını (margins) zaten içerir.
             Color.clear
                 .frame(width: fold.frame.width)
             grid(trailing, columns: half)

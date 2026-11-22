@@ -11,6 +11,10 @@ import SwiftUI
 
 struct ContentView: View {
     var body: some View {
+        // iPhone Duo: Standart TabView kullanıyoruz. Dış ekranda ve iç ekran
+        // yataydayken sistem tab bar'ı otomatik olarak yana (dikey eksene) alır.
+        // Neden? Dış ekran geniş ama kısa; dikey alanı korumak için. Bu yerleşimi
+        // asla override etmiyoruz, özel bir tab bar da yazmıyoruz.
         TabView {
             Tab("Principles", systemImage: "lightbulb") {
                 PrinciplesView()
